@@ -104,11 +104,11 @@ module "fargate" {
     name  = "ecs-fargate-example"
     image = "marcincuber/2048-game:latest"
 
-    port_mapping = {
+    port_mapping = [{
       containerPort = 80
       hostPort      = 80
       protocol      = "tcp"
-    }
+    }]
 
     stop_timeout = 90
   }]
