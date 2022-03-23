@@ -9,12 +9,6 @@ variable "sg_name_prefix" {
   default     = ""
 }
 
-variable "container_name" {
-  description = "Optional name for the container to be used instead of name_prefix."
-  default     = ""
-  type        = string
-}
-
 variable "vpc_id" {
   description = "The VPC ID."
   type        = string
@@ -35,11 +29,6 @@ variable "platform_version" {
   default     = "LATEST"
 }
 
-variable "task_container_image" {
-  description = "The image used to start a container."
-  type        = string
-}
-
 variable "desired_count" {
   description = "The number of instances of the task definitions to place and keep running."
   default     = 1
@@ -50,17 +39,6 @@ variable "task_container_assign_public_ip" {
   description = "Assigned public IP to the container."
   default     = false
   type        = bool
-}
-
-variable "task_container_port" {
-  description = "The port number on the container that is bound to the user-specified or automatically assigned host port"
-  type        = number
-}
-
-variable "task_host_port" {
-  description = "The port number on the container instance to reserve for your container."
-  type        = number
-  default     = 0
 }
 
 variable "task_container_protocol" {
@@ -97,12 +75,6 @@ variable "task_container_environment" {
   description = "The environment variables to pass to a container."
   default     = {}
   type        = map(string)
-}
-
-variable "task_container_secrets" {
-  description = "The secrets variables to pass to a container."
-  default     = null
-  type        = list(map(string))
 }
 
 variable "log_retention_in_days" {
@@ -217,66 +189,6 @@ variable "volume" {
   default     = []
 }
 
-variable "task_health_command" {
-  type        = list(string)
-  description = "A string array representing the command that the container runs to determine if it is healthy."
-  default     = null
-}
-
-variable "task_health_check" {
-  type        = map(number)
-  description = "An optional healthcheck definition for the task"
-  default     = null
-}
-
-variable "task_container_cpu" {
-  description = "Amount of CPU to reserve for the container."
-  default     = null
-  type        = number
-}
-
-variable "task_container_memory" {
-  description = "The hard limit (in MiB) of memory for the container."
-  default     = null
-  type        = number
-}
-
-variable "task_container_memory_reservation" {
-  description = "The soft limit (in MiB) of memory to reserve for the container."
-  default     = null
-  type        = number
-}
-
-variable "task_container_working_directory" {
-  description = "The working directory to run commands inside the container."
-  default     = ""
-  type        = string
-}
-
-variable "task_start_timeout" {
-  type        = number
-  description = "Time duration (in seconds) to wait before giving up on resolving dependencies for a container. If this parameter is not specified, the default value of 3 minutes is used (fargate)."
-  default     = null
-}
-
-variable "task_stop_timeout" {
-  type        = number
-  description = "Time duration (in seconds) to wait before the container is forcefully killed if it doesn't exit normally on its own. The max stop timeout value is 120 seconds and if the parameter is not specified, the default value of 30 seconds is used."
-  default     = null
-}
-
-variable "task_mount_points" {
-  description = "The mount points for data volumes in your container. Each object inside the list requires \"sourceVolume\", \"containerPath\" and \"readOnly\". For more information see https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html "
-  type        = list(object({ sourceVolume = string, containerPath = string, readOnly = bool }))
-  default     = null
-}
-
-variable "task_pseudo_terminal" {
-  type        = bool
-  description = "Allocate TTY in the container"
-  default     = null
-}
-
 variable "force_new_deployment" {
   type        = bool
   description = "Enable to force a new task deployment of the service. This can be used to update tasks to use a newer Docker image with same image/tag combination (e.g. myimage:latest), roll Fargate tasks onto a newer platform version."
@@ -293,4 +205,43 @@ variable "enable_execute_command" {
   type        = bool
   description = "Specifies whether to enable Amazon ECS Exec for the tasks within the service."
   default     = true
+}
+
+variable "container" {
+  type = list(object({
+    name                   = string
+    image                  = string
+    essential              = optional(bool)
+    environment_variables  = optional(map(string))
+    #secrets                = optional(list(map(string)))
+
+    command           = optional(list(string))
+    working_directory = optional(string)
+    port_mapping = optional(object({
+      hostPort      = number
+      containerPort = number
+      protocol      = string
+    }))
+    health_check = optional(object({
+      command     = list(string)
+      interval    = number
+      timeout     = number
+      retries     = number
+      startPeriod = number
+    }))
+
+    cpu                = optional(number)
+    memory             = optional(number)
+    memory_reservation = optional(number)
+
+    start_timeout   = optional(number)
+    stop_timeout    = optional(number)
+    mount_points    = optional(list(object({ sourceVolume = string, containerPath = string, readOnly = bool })))
+    pseudo_terminal = optional(bool)
+  }))
+  default = []
+  validation {
+    condition     = length(var.container) > 0
+    error_message = "At least one container must be defined."
+  }
 }

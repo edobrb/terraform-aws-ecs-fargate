@@ -98,7 +98,7 @@ resource "aws_lb_target_group" "task" {
   name                 = lookup(each.value, "target_group_name")
   vpc_id               = var.vpc_id
   protocol             = var.task_container_protocol
-  port                 = lookup(each.value, "container_port", var.task_container_port)
+  port                 = lookup(each.value, "container_port")
   deregistration_delay = lookup(each.value, "deregistration_delay", null)
   target_type          = "ip"
 
@@ -158,77 +158,41 @@ resource "aws_ecs_task_definition" "task" {
     }
   }
 
-  container_definitions = <<EOF
-[{
-  "name": "${var.container_name != "" ? var.container_name : var.name_prefix}",
-  "image": "${var.task_container_image}",
-  %{if var.repository_credentials != ""~}
-  "repositoryCredentials": {
-    "credentialsParameter": "${var.repository_credentials}"
-  },
-  %{~endif}
-  "essential": true,
-  %{if var.task_container_port != 0 || var.task_host_port != 0~}
-  "portMappings": [
+  container_definitions = jsonencode([for def in var.container : jsonencode(
     {
-      %{if var.task_host_port != 0~}
-      "hostPort": ${var.task_host_port},
-      %{~endif}
-      %{if var.task_container_port != 0~}
-      "containerPort": ${var.task_container_port},
-      %{~endif}
-      "protocol":"tcp"
+      "name" : def.name,
+      "image" : def.image,
+      "essential" : def.essential != null ? def.essential : true
+      "portMappings" : [],
+      "logConfiguration" : {
+        "logDriver" : "awslogs",
+        "options" : {
+          "awslogs-group" : "${aws_cloudwatch_log_group.main.name}",
+          "awslogs-region" : "${data.aws_region.current.name}",
+          "awslogs-stream-prefix" : "container"
+        }
+      },
+      "repository_credentials" : var.repository_credentials != null ? {
+        "credentialsParameter" : var.repository_credentials
+      } : null
+      "environment" : def.environment_variables != null ? [for k, v in def.environment_variables : jsonencode({
+        "name"  = k,
+        "value" = v
+      })] : [],
+      "portMappings" : def.port_mapping != null ? [jsonencode(def.port_mapping)] : [],
+      "healthcheck" : jsonencode(def.health_check),
+      "command" : jsonencode(def.command),
+      "workingDirectory" : def.working_directory,
+      "memory" : def.memory,
+      "memoryReservation" : def.memory_reservation,
+      "cpu" : def.cpu,
+      "startTimeout" : def.start_timeout,
+      "stopTimeout" : def.stop_timeout,
+      "mountPoints" : jsonencode(def.mount_points),
+      #"secrets": jsonencode(def.secrets),
+      "pseudoTerminal" : def.pseudo_terminal,
     }
-  ],
-  %{~endif}
-  "logConfiguration": {
-    "logDriver": "awslogs",
-    "options": {
-      "awslogs-group": "${aws_cloudwatch_log_group.main.name}",
-      "awslogs-region": "${data.aws_region.current.name}",
-      "awslogs-stream-prefix": "container"
-    }
-  },
-  %{if var.task_health_check != null || var.task_health_command != null~}
-  "healthcheck": {
-    "command": ${jsonencode(var.task_health_command)},
-    "interval": ${lookup(var.task_health_check, "interval", 30)},
-    "timeout": ${lookup(var.task_health_check, "timeout", 5)},
-    "retries": ${lookup(var.task_health_check, "retries", 3)},
-    "startPeriod": ${lookup(var.task_health_check, "startPeriod", 0)}
-  },
-  %{~endif}
-  "command": ${jsonencode(var.task_container_command)},
-  %{if var.task_container_working_directory != ""~}
-  "workingDirectory": ${var.task_container_working_directory},
-  %{~endif}
-  %{if var.task_container_memory != null~}
-  "memory": ${var.task_container_memory},
-  %{~endif}
-  %{if var.task_container_memory_reservation != null~}
-  "memoryReservation": ${var.task_container_memory_reservation},
-  %{~endif}
-  %{if var.task_container_cpu != null~}
-  "cpu": ${var.task_container_cpu},
-  %{~endif}
-  %{if var.task_start_timeout != null~}
-  "startTimeout": ${var.task_start_timeout},
-  %{~endif}
-  %{if var.task_stop_timeout != null~}
-  "stopTimeout": ${var.task_stop_timeout},
-  %{~endif}
-  %{if var.task_mount_points != null~}
-  "mountPoints": ${jsonencode(var.task_mount_points)},
-  %{~endif}
-  %{if var.task_container_secrets != null~}
-  "secrets": ${jsonencode(var.task_container_secrets)},
-  %{~endif}
-  %{if var.task_pseudo_terminal != null~}
-  "pseudoTerminal": ${var.task_pseudo_terminal},
-  %{~endif}
-  "environment": ${jsonencode(local.task_environment)}
-}]
-EOF
+  )])
 
   dynamic "placement_constraints" {
     for_each = var.placement_constraints
@@ -284,12 +248,7 @@ EOF
     }
   }
 
-  tags = merge(
-    var.tags,
-    {
-      Name = var.container_name != "" ? var.container_name : var.name_prefix
-    },
-  )
+  tags = var.tags
 }
 
 resource "aws_ecs_service" "service" {
@@ -330,8 +289,8 @@ resource "aws_ecs_service" "service" {
   dynamic "load_balancer" {
     for_each = var.load_balanced ? var.target_groups : []
     content {
-      container_name   = var.container_name != "" ? var.container_name : var.name_prefix
-      container_port   = lookup(load_balancer.value, "container_port", var.task_container_port)
+      container_name   = lookup(load_balancer.value, "container_name")
+      container_port   = lookup(load_balancer.value, "container_port")
       target_group_arn = aws_lb_target_group.task[lookup(load_balancer.value, "target_group_name")].arn
     }
   }
@@ -344,7 +303,7 @@ resource "aws_ecs_service" "service" {
     for_each = var.service_registry_arn == "" ? [] : [1]
     content {
       registry_arn   = var.service_registry_arn
-      container_name = var.container_name != "" ? var.container_name : var.name_prefix
+      container_name = var.container[0].name
     }
   }
 

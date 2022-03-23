@@ -1,5 +1,5 @@
 provider "aws" {
-  region = "eu-west-1"
+  region  = "eu-west-1"
 }
 
 #####
@@ -97,17 +97,29 @@ module "fargate" {
 
   platform_version = "1.4.0" # defaults to LATEST
 
-  task_container_image   = "marcincuber/2048-game:latest"
   task_definition_cpu    = 256
   task_definition_memory = 512
 
-  task_container_port             = 80
+  container = [{
+    name  = "ecs-fargate-example"
+    image = "marcincuber/2048-game:latest"
+
+    port_mapping = {
+      containerPort = 80
+      hostPort      = 80
+      protocol      = "tcp"
+    }
+
+    stop_timeout = 90
+  }]
+
   task_container_assign_public_ip = true
 
   target_groups = [
     {
       target_group_name = "tg-example"
       container_port    = 80
+      container_name    = "ecs-fargate-example"
     }
   ]
 
@@ -115,8 +127,6 @@ module "fargate" {
     port = "traffic-port"
     path = "/"
   }
-
-  task_stop_timeout = 90
 
   depends_on = [
     module.alb
