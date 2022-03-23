@@ -163,7 +163,6 @@ resource "aws_ecs_task_definition" "task" {
       "name" : def.name,
       "image" : def.image,
       "essential" : def.essential != null ? def.essential : true
-      "portMappings" : [],
       "logConfiguration" : {
         "logDriver" : "awslogs",
         "options" : {
