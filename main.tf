@@ -158,7 +158,7 @@ resource "aws_ecs_task_definition" "task" {
     }
   }
 
-  container_definitions = jsonencode([for def in var.container : jsonencode(
+  container_definitions = jsonencode([for def in var.container :
     {
       "name" : def.name,
       "image" : def.image,
@@ -174,24 +174,24 @@ resource "aws_ecs_task_definition" "task" {
       "repository_credentials" : var.repository_credentials != null ? {
         "credentialsParameter" : var.repository_credentials
       } : null
-      "environment" : def.environment_variables != null ? [for k, v in def.environment_variables : jsonencode({
+      "environment" : def.environment_variables != null ? [for k, v in def.environment_variables : {
         "name"  = k,
         "value" = v
-      })] : [],
-      "portMappings" : def.port_mapping != null ? [jsonencode(def.port_mapping)] : [],
-      "healthcheck" : jsonencode(def.health_check),
-      "command" : jsonencode(def.command),
+      }] : [],
+      "portMappings" : def.port_mapping != null ? def.port_mapping : [],
+      "healthcheck" : def.health_check,
+      "command" : def.command,
       "workingDirectory" : def.working_directory,
       "memory" : def.memory,
       "memoryReservation" : def.memory_reservation,
       "cpu" : def.cpu,
       "startTimeout" : def.start_timeout,
       "stopTimeout" : def.stop_timeout,
-      "mountPoints" : jsonencode(def.mount_points),
+      "mountPoints" : def.mount_points != null ? def.mount_points : [],
       #"secrets": jsonencode(def.secrets),
       "pseudoTerminal" : def.pseudo_terminal,
     }
-  )])
+  ])
 
   dynamic "placement_constraints" {
     for_each = var.placement_constraints

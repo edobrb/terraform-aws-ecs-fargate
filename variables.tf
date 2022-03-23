@@ -217,11 +217,11 @@ variable "container" {
 
     command           = optional(list(string))
     working_directory = optional(string)
-    port_mapping = optional(object({
+    port_mapping = optional(list(object({
       hostPort      = number
       containerPort = number
       protocol      = string
-    }))
+    })))
     health_check = optional(object({
       command     = list(string)
       interval    = number
