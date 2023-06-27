@@ -104,7 +104,7 @@ resource "aws_lb_target_group" "task" {
 
 
   dynamic "health_check" {
-    for_each = [var.health_check]
+    for_each = var.health_check == null ? [] : [var.health_check]
     content {
       enabled             = lookup(health_check.value, "enabled", null)
       interval            = lookup(health_check.value, "interval", null)
@@ -150,6 +150,11 @@ resource "aws_ecs_task_definition" "task" {
   cpu                      = var.task_definition_cpu
   memory                   = var.task_definition_memory
   task_role_arn            = aws_iam_role.task.arn
+
+  runtime_platform {
+    operating_system_family = "LINUX"
+    cpu_architecture        = var.cpu_architecture
+  }
 
   dynamic "ephemeral_storage" {
     for_each = var.task_definition_ephemeral_storage == 0 ? [] : [var.task_definition_ephemeral_storage]

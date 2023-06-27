@@ -86,6 +86,7 @@ variable "log_retention_in_days" {
 variable "health_check" {
   description = "A health block containing health check settings for the target group. Overrides the defaults."
   type        = map(string)
+  default     = null
 }
 
 variable "health_check_grace_period_seconds" {
@@ -209,10 +210,10 @@ variable "enable_execute_command" {
 
 variable "container" {
   type = list(object({
-    name                   = string
-    image                  = string
-    essential              = optional(bool)
-    environment_variables  = optional(map(string))
+    name                  = string
+    image                 = string
+    essential             = optional(bool)
+    environment_variables = optional(map(string))
     #secrets                = optional(list(map(string)))
 
     command           = optional(list(string))
@@ -244,4 +245,9 @@ variable "container" {
     condition     = length(var.container) > 0
     error_message = "At least one container must be defined."
   }
+}
+
+variable "cpu_architecture" {
+  type    = string
+  default = "X86_64"
 }
