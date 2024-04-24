@@ -55,7 +55,7 @@ locals {
 data "aws_iam_policy_document" "task_ecs_ssm_policy" {
   statement {
     effect    = "Allow"
-    resources = local.secrets_arn.length
+    resources = local.secrets_arn
     actions = [
       "ssm:GetParameters",
       "secretsmanager:GetSecretValue",
