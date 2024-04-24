@@ -183,6 +183,10 @@ resource "aws_ecs_task_definition" "task" {
         "name"  = k,
         "value" = v
       }] : [],
+      "secrets" : def.secrets != null ? [for k, v in def.secrets : {
+        "name"      = k,
+        "valueFrom" = v
+      }] : [],
       "portMappings" : def.port_mapping != null ? def.port_mapping : [],
       "healthcheck" : def.health_check,
       "command" : def.command,

@@ -214,7 +214,7 @@ variable "container" {
     image                 = string
     essential             = optional(bool)
     environment_variables = optional(map(string))
-    #secrets                = optional(list(map(string)))
+    secrets               = optional(map(string))
 
     command           = optional(list(string))
     working_directory = optional(string)
