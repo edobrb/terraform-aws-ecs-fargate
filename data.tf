@@ -53,8 +53,6 @@ locals {
 }
 # Task permissions to allow SSM Pull
 data "aws_iam_policy_document" "task_ecs_ssm_policy" {
-  count = local.secrets_arn.length > 0 ? 1 : 0
-
   statement {
     effect    = "Allow"
     resources = local.secrets_arn.length
