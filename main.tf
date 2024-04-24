@@ -27,6 +27,7 @@ resource "aws_iam_role_policy" "task_execution" {
 }
 
 resource "aws_iam_role_policy" "ssm_execution" {
+  count  = length(local.secrets_arn) > 0 ? 1 : 0
   name   = "${var.name_prefix}-task-ssm"
   role   = aws_iam_role.execution.id
   policy = data.aws_iam_policy_document.task_ecs_ssm_policy.json
