@@ -48,6 +48,24 @@ data "aws_iam_policy_document" "task_ecs_exec_policy" {
   }
 }
 
+locals {
+  secrets_arn = flatten([for d in var.container : d.secrets != null ? d.secrets : []])
+}
+# Task permissions to allow SSM Pull
+data "aws_iam_policy_document" "task_ecs_ssm_policy" {
+  count = local.secrets_arn.length > 0 ? 1 : 0
+
+  statement {
+    effect    = "Allow"
+    resources = local.secrets_arn.length
+    actions = [
+      "ssm:GetParameters",
+      "secretsmanager:GetSecretValue",
+      "kms:Decrypt"
+    ]
+  }
+}
+
 # Task ecr privileges
 data "aws_iam_policy_document" "task_execution_permissions" {
   statement {

@@ -26,6 +26,13 @@ resource "aws_iam_role_policy" "task_execution" {
   policy = data.aws_iam_policy_document.task_execution_permissions.json
 }
 
+resource "aws_iam_role_policy" "task_execution" {
+  count = locals.secrets_arn.length > 0 ? 1 : 0
+  name   = "${var.name_prefix}-task-ssm"
+  role   = aws_iam_role.execution.id
+  policy = data.aws_iam_policy_document.task_ecs_ssm_policy.json
+}
+
 resource "aws_iam_role_policy" "read_repository_credentials" {
   count = var.create_repository_credentials_iam_policy ? 1 : 0
 
