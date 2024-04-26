@@ -49,7 +49,7 @@ data "aws_iam_policy_document" "task_ecs_exec_policy" {
 }
 
 locals {
-  secrets_arn = flatten([for d in var.container : d.secrets != null ? values(d.secrets) : []])
+  secrets_arn = flatten([for d in var.container : d.environment_secrets_arn != null ? values(d.environment_secrets_arn) : []])
 }
 # Task permissions to allow SSM Pull
 data "aws_iam_policy_document" "task_ecs_ssm_policy" {

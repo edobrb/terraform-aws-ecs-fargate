@@ -210,11 +210,12 @@ variable "enable_execute_command" {
 
 variable "container" {
   type = list(object({
-    name                  = string
-    image                 = string
-    essential             = optional(bool)
-    environment_variables = optional(map(string))
-    secrets               = optional(map(string))
+    name                    = string
+    image                   = string
+    essential               = optional(bool)
+    environment_variables   = optional(map(string))
+    environment_secrets_arn = optional(map(string))
+
 
     command           = optional(list(string))
     working_directory = optional(string)

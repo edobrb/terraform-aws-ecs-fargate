@@ -190,7 +190,7 @@ resource "aws_ecs_task_definition" "task" {
         "name"  = k,
         "value" = v
       }] : [],
-      "secrets" : def.secrets != null ? [for k, v in def.secrets : {
+      "secrets" : def.environment_secrets_arn != null ? [for k, v in def.environment_secrets_arn : {
         "name"      = k,
         "valueFrom" = v
       }] : [],
