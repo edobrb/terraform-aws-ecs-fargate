@@ -174,8 +174,8 @@ resource "aws_ecs_task_definition" "task" {
     {
       "name" : def.name,
       "image" : def.image,
-      "repositoryCredentials" : def.image_pull_secret_arn != null ? {
-        "credentialsParameter" : def.image_pull_secret_arn
+      "repositoryCredentials": def.image_pull_secret_arn != null ? {
+        "credentialsParameter": "${def.image_pull_secret_arn}"
       } : null,
       "essential" : def.essential != null ? def.essential : true
       "logConfiguration" : {
