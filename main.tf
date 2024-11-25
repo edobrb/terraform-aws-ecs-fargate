@@ -33,6 +33,13 @@ resource "aws_iam_role_policy" "ssm_execution" {
   policy = data.aws_iam_policy_document.task_ecs_ssm_policy.json
 }
 
+resource "aws_iam_role_policy" "kms_execution" {
+  count  = length(local.image_pull_credentials) > 0 ? 1 : 0
+  name   = "${var.name_prefix}-task-kms"
+  role   = aws_iam_role.execution.id
+  policy = data.aws_iam_policy_document.task_ecs_kms_policy.json
+}
+
 resource "aws_iam_role_policy" "read_repository_credentials" {
   count = var.create_repository_credentials_iam_policy ? 1 : 0
 
@@ -174,8 +181,8 @@ resource "aws_ecs_task_definition" "task" {
     {
       "name" : def.name,
       "image" : def.image,
-      "repositoryCredentials": def.image_pull_secret_arn != null ? {
-        "credentialsParameter": "${def.image_pull_secret_arn}"
+      "repositoryCredentials" : def.image_pull_secret_arn != null ? {
+        "credentialsParameter" : "${def.image_pull_secret_arn}"
       } : null,
       "essential" : def.essential != null ? def.essential : true
       "logConfiguration" : {
