@@ -48,11 +48,6 @@ data "aws_iam_policy_document" "task_ecs_exec_policy" {
   }
 }
 
-locals {
-  secrets_arn = flatten([for d in var.container : d.environment_secrets_arn != null ? values(d.environment_secrets_arn) : []])
-  image_pull_credentials = flatten([for d in var.container : d.image_pull_secret_arn != null ? [d.image_pull_secret_arn] : []])
-}
-
 # Task permissions to allow SSM Pull
 data "aws_iam_policy_document" "task_ecs_ssm_policy" {
   statement {
