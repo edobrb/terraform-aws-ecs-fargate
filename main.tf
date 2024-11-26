@@ -27,15 +27,42 @@ resource "aws_iam_role_policy" "task_execution" {
 }
 
 resource "aws_iam_role_policy" "ssm_execution" {
-  name   = "${var.name_prefix}-task-ssm"
-  role   = aws_iam_role.execution.id
-  policy = data.aws_iam_policy_document.task_ecs_ssm_policy.json
+  count = length(local.ssm_parameters) > 0 ? 1 : 0
+  name  = "${var.name_prefix}-task-ssm"
+  role  = aws_iam_role.execution.id
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "ssm:GetParameters",
+          "secretsmanager:GetSecretValue",
+          "kms:Decrypt"
+        ],
+        Resource = local.ssm_parameters,
+      },
+    ],
+  })
 }
 
 resource "aws_iam_role_policy" "kms_execution" {
-  name   = "${var.name_prefix}-task-kms"
-  role   = aws_iam_role.execution.id
-  policy = data.aws_iam_policy_document.task_ecs_kms_policy.json
+  count = length(local.kms_parameters) > 0 ? 1 : 0
+  name  = "${var.name_prefix}-task-kms"
+  role  = aws_iam_role.execution.id
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "kms:Decrypt",
+          "secretsmanager:GetSecretValue"
+        ],
+        Resource = kms_parameters
+      },
+    ],
+  })
 }
 
 resource "aws_iam_role_policy" "read_repository_credentials" {

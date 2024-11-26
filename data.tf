@@ -1,7 +1,5 @@
 data "aws_region" "current" {}
 
-data "aws_caller_identity" "current" {}
-
 # Task role assume policy
 data "aws_iam_policy_document" "task_assume" {
   statement {
@@ -53,31 +51,6 @@ data "aws_iam_policy_document" "task_ecs_exec_policy" {
 locals {
   ssm_parameters = flatten([for d in var.container : d.environment_secrets_arn != null ? values(d.environment_secrets_arn) : []])
   kms_parameters = flatten([for d in var.container : d.image_pull_secret_arn != null ? [d.image_pull_secret_arn] : []])
-}
-
-# Task permissions to allow SSM Pull
-data "aws_iam_policy_document" "task_ecs_ssm_policy" {
-  statement {
-    effect    = "Allow"
-    resources = concat(local.ssm_parameters, length(local.ssm_parameters) > 0 ? [] : ["arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.id}:parameter/"])
-    actions = [
-      "ssm:GetParameters",
-      "secretsmanager:GetSecretValue",
-      "kms:Decrypt"
-    ]
-  }
-}
-
-# Task permissions to allow KMS Pull
-data "aws_iam_policy_document" "task_ecs_kms_policy" {
-  statement {
-    effect    = "Allow"
-    resources = concat(local.kms_parameters, length(local.kms_parameters) > 0 ? [] : ["arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.id}:secret:/"])
-    actions = [
-      "kms:Decrypt",
-      "secretsmanager:GetSecretValue"
-    ]
-  }
 }
 
 # Task ecr privileges
