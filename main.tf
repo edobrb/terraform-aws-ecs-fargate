@@ -59,7 +59,7 @@ resource "aws_iam_role_policy" "kms_execution" {
           "kms:Decrypt",
           "secretsmanager:GetSecretValue"
         ],
-        Resource = kms_parameters
+        Resource = local.kms_parameters
       },
     ],
   })
