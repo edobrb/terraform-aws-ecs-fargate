@@ -1,5 +1,7 @@
 data "aws_region" "current" {}
 
+data "aws_caller_identity" "current" {}
+
 # Task role assume policy
 data "aws_iam_policy_document" "task_assume" {
   statement {
@@ -52,7 +54,7 @@ data "aws_iam_policy_document" "task_ecs_exec_policy" {
 data "aws_iam_policy_document" "task_ecs_ssm_policy" {
   statement {
     effect    = "Allow"
-    resources = flatten([for d in var.container : d.environment_secrets_arn != null ? values(d.environment_secrets_arn) : []])
+    resources = flatten([for d in var.container : d.environment_secrets_arn != null ? values(d.environment_secrets_arn) : ["arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.id}:parameter/"]])
     actions = [
       "ssm:GetParameters",
       "secretsmanager:GetSecretValue",
@@ -65,7 +67,7 @@ data "aws_iam_policy_document" "task_ecs_ssm_policy" {
 data "aws_iam_policy_document" "task_ecs_kms_policy" {
   statement {
     effect    = "Allow"
-    resources = flatten([for d in var.container : d.image_pull_secret_arn != null ? [d.image_pull_secret_arn] : []])
+    resources = flatten([for d in var.container : d.image_pull_secret_arn != null ? [d.image_pull_secret_arn] : ["arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.id}:secret:/"]])
     actions = [
       "kms:Decrypt",
 			"secretsmanager:GetSecretValue"

@@ -27,14 +27,12 @@ resource "aws_iam_role_policy" "task_execution" {
 }
 
 resource "aws_iam_role_policy" "ssm_execution" {
-  count  = length(jsondecode(data.aws_iam_policy_document.task_ecs_ssm_policy.json).Resource) > 0 ? 1 : 0
   name   = "${var.name_prefix}-task-ssm"
   role   = aws_iam_role.execution.id
   policy = data.aws_iam_policy_document.task_ecs_ssm_policy.json
 }
 
 resource "aws_iam_role_policy" "kms_execution" {
-  count  = length(jsondecode(data.aws_iam_policy_document.task_ecs_kms_policy.json).Resource) > 0 ? 1 : 0
   name   = "${var.name_prefix}-task-kms"
   role   = aws_iam_role.execution.id
   policy = data.aws_iam_policy_document.task_ecs_kms_policy.json
