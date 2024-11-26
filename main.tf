@@ -34,7 +34,7 @@ resource "aws_iam_role_policy" "ssm_execution" {
 }
 
 resource "aws_iam_role_policy" "kms_execution" {
-  count  = length(flatten([for d in var.container : d.image_pull_secret_arn != null ? [d.image_pull_secret_arn] : []])) > 0 ? 1 : 0
+  count  = length(local.image_pull_credentials) > 0 ? 1 : 0
   name   = "${var.name_prefix}-task-kms"
   role   = aws_iam_role.execution.id
   policy = data.aws_iam_policy_document.task_ecs_kms_policy.json

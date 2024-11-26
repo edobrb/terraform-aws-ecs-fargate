@@ -57,7 +57,7 @@ locals {
 data "aws_iam_policy_document" "task_ecs_ssm_policy" {
   statement {
     effect    = "Allow"
-    resources = local.secrets_arn
+    resources = flatten([for d in var.container : d.environment_secrets_arn != null ? values(d.environment_secrets_arn) : []])
     actions = [
       "ssm:GetParameters",
       "secretsmanager:GetSecretValue",
@@ -70,7 +70,7 @@ data "aws_iam_policy_document" "task_ecs_ssm_policy" {
 data "aws_iam_policy_document" "task_ecs_kms_policy" {
   statement {
     effect    = "Allow"
-    resources = local.image_pull_credentials
+    resources = flatten([for d in var.container : d.image_pull_secret_arn != null ? [d.image_pull_secret_arn] : []])
     actions = [
       "kms:Decrypt",
 			"secretsmanager:GetSecretValue"
