@@ -48,11 +48,6 @@ data "aws_iam_policy_document" "task_ecs_exec_policy" {
   }
 }
 
-locals {
-  ssm_parameters = flatten([for d in var.container : d.environment_secrets_arn != null ? values(d.environment_secrets_arn) : []])
-  kms_parameters = flatten([for d in var.container : d.image_pull_secret_arn != null ? [d.image_pull_secret_arn] : []])
-}
-
 # Task ecr privileges
 data "aws_iam_policy_document" "task_execution_permissions" {
   statement {
