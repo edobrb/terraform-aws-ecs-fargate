@@ -63,7 +63,7 @@ resource "aws_iam_role_policy" "kms_execution" {
           "kms:Decrypt",
           "secretsmanager:GetSecretValue"
         ],
-        Resource = var.container[*].image_pull_secret_arn
+        Resource = flatten([for d in var.container : d.image_pull_secret_arn != null ? [d.image_pull_secret_arn] : []])
       },
     ],
   })
