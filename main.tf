@@ -26,8 +26,12 @@ resource "aws_iam_role_policy" "task_execution" {
   policy = data.aws_iam_policy_document.task_execution_permissions.json
 }
 
+locals {
+  ssm_parameters = flatten([for d in var.container : d.environment_secrets_arn != null ? values(d.environment_secrets_arn) : []])
+}
+
 resource "aws_iam_role_policy" "ssm_execution" {
-  count = length(flatten([for d in var.container : d.environment_secrets_arn != null ? values(d.environment_secrets_arn) : []])) > 0 ? 1 : 0
+  count = length(local.ssm_parameters) > 0 ? 1 : 0
   name  = "${var.name_prefix}-task-ssm"
   role  = aws_iam_role.execution.id
   policy = jsonencode({
@@ -40,14 +44,14 @@ resource "aws_iam_role_policy" "ssm_execution" {
           "secretsmanager:GetSecretValue",
           "kms:Decrypt"
         ],
-        Resource = flatten([for d in var.container : d.environment_secrets_arn != null ? values(d.environment_secrets_arn) : []]),
+        Resource = local.ssm_parameters,
       },
     ],
   })
 }
 
 resource "aws_iam_role_policy" "kms_execution" {
-  count = length(flatten([for d in var.container : d.image_pull_secret_arn != null ? [d.image_pull_secret_arn] : []])) > 0 ? 1 : 0
+  count = length(var.container[*].image_pull_secret_arn) > 0 ? 1 : 0
   name  = "${var.name_prefix}-task-kms"
   role  = aws_iam_role.execution.id
   policy = jsonencode({
@@ -59,7 +63,7 @@ resource "aws_iam_role_policy" "kms_execution" {
           "kms:Decrypt",
           "secretsmanager:GetSecretValue"
         ],
-        Resource = flatten([for d in var.container : d.image_pull_secret_arn != null ? [d.image_pull_secret_arn] : []])
+        Resource = var.container[*].image_pull_secret_arn
       },
     ],
   })
