@@ -28,6 +28,7 @@ resource "aws_iam_role_policy" "task_execution" {
 
 locals {
   ssm_parameters = flatten([for d in var.container : d.environment_secrets_arn != null ? values(d.environment_secrets_arn) : []])
+  kms_resources = flatten([for d in var.container : d.image_pull_secret_arn != null ? [d.image_pull_secret_arn] : []])
 }
 
 resource "aws_iam_role_policy" "ssm_execution" {
@@ -51,7 +52,7 @@ resource "aws_iam_role_policy" "ssm_execution" {
 }
 
 resource "aws_iam_role_policy" "kms_execution" {
-  count = length(var.container[*].image_pull_secret_arn) > 0 ? 1 : 0
+  count = length(local.kms_resources) > 0 ? 1 : 0
   name  = "${var.name_prefix}-task-kms"
   role  = aws_iam_role.execution.id
   policy = jsonencode({
@@ -63,7 +64,7 @@ resource "aws_iam_role_policy" "kms_execution" {
           "kms:Decrypt",
           "secretsmanager:GetSecretValue"
         ],
-        Resource = flatten([for d in var.container : d.image_pull_secret_arn != null ? [d.image_pull_secret_arn] : []])
+        Resource = local.kms_resources
       },
     ],
   })

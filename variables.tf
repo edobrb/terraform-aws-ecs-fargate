@@ -212,7 +212,7 @@ variable "container" {
   type = list(object({
     name                    = string
     image                   = string
-    image_pull_secret_arn   = optional(string)
+    image_pull_secret_arn   = optional(string, null)
     essential               = optional(bool)
     environment_variables   = optional(map(string))
     environment_secrets_arn = optional(map(string))
